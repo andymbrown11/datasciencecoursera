@@ -1,0 +1,50 @@
+library(dplyr)
+
+filename <- '/Users/andrewbrown/Week4Assignment.zip'
+fileURL <- 'https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip'
+download.file(fileURL,filename,method = 'curl')
+unzip(filename)
+list.files()
+getwd()
+
+setwd("/Users/andrewbrown/UCI HAR Dataset/")
+
+features <- read.table("UCI HAR Dataset/features.txt", col.names = c("n","functions"))
+activities <- read.table("UCI HAR Dataset/activity_labels.txt", col.names = c("code", "activity"))
+subject_test <- read.table("UCI HAR Dataset/test/subject_test.txt", col.names = "subject")
+x_test <- read.table("UCI HAR Dataset/test/X_test.txt", col.names = features$functions)
+y_test <- read.table("UCI HAR Dataset/test/y_test.txt", col.names = "code")
+subject_train <- read.table("UCI HAR Dataset/train/subject_train.txt", col.names = "subject")
+x_train <- read.table("UCI HAR Dataset/train/X_train.txt", col.names = features$functions)
+y_train <- read.table("UCI HAR Dataset/train/y_train.txt", col.names = "code")
+
+X <- rbind(x_test,x_train)
+Y <- rbind(y_test,y_train)
+Subject <- rbind(subject_test,subject_train)
+Merged_data <- cbind(Subject,Y,X)
+
+TidyData <- Merged_data %>%
+              select(subject,code,contains("mean"),contains("std"))
+
+Activites_Data <- merge(TidyData,activities,by.x = "code",by.y = "code")
+
+names(Activites_Data)<-gsub("Acc", "Accelerometer", names(Activites_Data))
+names(Activites_Data)<-gsub("Gyro", "Gyroscope", names(Activites_Data))
+names(Activites_Data)<-gsub("BodyBody", "Body", names(Activites_Data))
+names(Activites_Data)<-gsub("Mag", "Magnitude", names(Activites_Data))
+names(Activites_Data)<-gsub("^t", "Time", names(Activites_Data))
+names(Activites_Data)<-gsub("^f", "Frequency", names(Activites_Data))
+names(Activites_Data)<-gsub("tBody", "TimeBody", names(Activites_Data))
+names(Activites_Data)<-gsub("-mean()", "Mean", names(Activites_Data), ignore.case = TRUE)
+names(Activites_Data)<-gsub("-std()", "STD", names(Activites_Data), ignore.case = TRUE)
+names(Activites_Data)<-gsub("-freq()", "Frequency", names(Activites_Data), ignore.case = TRUE)
+names(Activites_Data)<-gsub("angle", "Angle", names(Activites_Data))
+names(Activites_Data)<-gsub("gravity", "Gravity", names(Activites_Data))
+
+str(Activites_Data)
+
+Tidy_Data_2 <- Activites_Data %>%
+              group_by(subject,activity)%>%
+              summarize_all(funs(mean))
+
+
